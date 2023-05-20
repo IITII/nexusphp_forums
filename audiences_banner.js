@@ -13,5 +13,5 @@
 
 (async function () {
     'use strict';
-    jQuery("table[class='head']").height('100px')
+    jQuery("div[class*='banner']").height('100px')
 })();
