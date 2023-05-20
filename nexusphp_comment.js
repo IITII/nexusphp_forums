@@ -4,7 +4,6 @@
 // @version      0.1
 // @description  NexusPHP 帖子评论收集, 主要用于发药
 // @author       IITII
-// @require     file:///Users/iitii/github/auto/tampermonokey/nexusphp_comment.js
 // @require      https://code.jquery.com/jquery-3.6.0.min.js
 // @match        https://**/forums.php*
 // @icon         https://avatars.githubusercontent.com/u/33705067?v=4
