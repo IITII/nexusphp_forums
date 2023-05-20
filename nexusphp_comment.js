@@ -2,12 +2,13 @@
 // @name         NexusPHP 帖子评论收集
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  NexusPHP 帖子评论收集, 主要用于发药
+// @description  NexusPHP 帖子评论收集, 主要用于发药时过滤邀请人. 有问题请在 Github 反馈: https://github.com/IITII/nexusphp_forums
 // @author       IITII
 // @require      https://code.jquery.com/jquery-3.6.0.min.js
 // @match        https://**/forums.php*
 // @icon         https://avatars.githubusercontent.com/u/33705067?v=4
 // @grant        none
+// @todo         做种条数, 本站 email, 用户被警告
 // ==/UserScript==
 
 (async function () {
