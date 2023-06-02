@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NexusPHP 帖子评论收集
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  NexusPHP 帖子评论收集, 主要用于发药时过滤邀请人. 有问题请在 Github 反馈: https://github.com/IITII/nexusphp_forums
 // @author       IITII
 // @require      https://code.jquery.com/jquery-3.6.0.min.js
@@ -11,11 +11,25 @@
 // @todo         做种条数, 本站 email, 用户被警告
 // ==/UserScript==
 
+// @require file:///D:/services/nexusphp_forums/nexusphp_comment.js
 (async function () {
   'use strict';
+  // setting
+  // 求药信息是否需要包含ID
+  const preIdIsRequired = true
+  // 求药ID 正则
+  const preIdReg = /注册(用户名|id)[：:]/ig
+  // 求药邮箱正则
+  const preEmailReg = /(邮箱|email)[：:]/ig
+  // 邮箱格式
+  const preEmailFormat = /[a-z0-9]@[a-z0-9]+\./ig
+  // 是否debug, debug下只获取当前页
+  const isDebug = false
+  // 是否获取用户做种大小
+  const getSeedingSize = false
+  // req break, lower break will reduce high load for server
   const reqBreak = 1000
-  let isDebug = false, getSeedingSize = true
-  let href, curr_url, title, currPage, finalPage, rawComment = [], filterComArr = [], sep = '|', filterSep = ',', stopped = true
+  let href, curr_url, title, currPage, finalPage, rawComment = [], filterComArr = [], sep = '|', filterSep = ',', stopped = false
   async function sleep(ms) {
     console.log(`sleep ${ms}ms`);
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -30,8 +44,10 @@
         tb: singleUnit * singleUnit * singleUnit * singleUnit,
         pb: singleUnit * singleUnit * singleUnit * singleUnit * singleUnit,
       }
+    unit = unit.trim()
     unit = unit.toLowerCase()
     unit = unit.replace('ib', 'b')
+    size = size.trim()
     size = parseFloat(size)
     let curUnit = units[unit]
     if (!curUnit) {
@@ -43,6 +59,10 @@
     let [size, unit] = str.split(withBreak)
     return sizeToGB(size, unit)
   }
+  function sizeInfoFormat(sizeAndUnit) {
+    let arr = [sizeAndUnit.replace(/[ptgmk]?b/ig, ' '), sizeAndUnit.replace(/\d+\.?(\d+)?/ig, ' ')]
+    return arr.map(_ => _.trim())
+  }
   /**
    * 创建下载文件
    * @param {String} fileName     文件名称
@@ -50,34 +70,34 @@
    * @return {String}
    */
   function createAndDownloadFile(fileName, fileContent) {
-      if (!fileName) {
-          return '文件名称为空';
-      }
-      if (typeof fileName !== 'string') {
-          return '文件名类型错误';
-      }
-      if (!fileContent) {
-          return '文件内容为空';
-      }
-      if (typeof fileContent !== 'string') {
-          fileContent = JSON.stringify(fileContent);
-      }
-  
-      // 创建隐藏a标签
-      let aTag = document.createElement('a')
-      // 将文件内容转成blob对象
-      let blob = new Blob([fileContent])
-      // 设置下载文件名
-      aTag.download = fileName;
-      // 给a标签创建DOMString
-      aTag.href = URL.createObjectURL(blob)
-      // 模拟点击、下载
-      aTag.click()
-      // 释放DOMString
-      URL.revokeObjectURL(blob)
-      return ''
+    if (!fileName) {
+      return '文件名称为空';
+    }
+    if (typeof fileName !== 'string') {
+      return '文件名类型错误';
+    }
+    if (!fileContent) {
+      return '文件内容为空';
+    }
+    if (typeof fileContent !== 'string') {
+      fileContent = JSON.stringify(fileContent);
+    }
+
+    // 创建隐藏a标签
+    let aTag = document.createElement('a')
+    // 将文件内容转成blob对象
+    let blob = new Blob([fileContent])
+    // 设置下载文件名
+    aTag.download = fileName;
+    // 给a标签创建DOMString
+    aTag.href = URL.createObjectURL(blob)
+    // 模拟点击、下载
+    aTag.click()
+    // 释放DOMString
+    URL.revokeObjectURL(blob)
+    return ''
   }
-  
+
 
   async function page(html = document) {
     let jq = jQuery(html)
@@ -86,7 +106,8 @@
       let $ = jQuery(this)
       let floor, uid, userInfo, username, user_level, status, user_details_link, comment_time
       floor = $.find("a:contains('#')").text()
-      comment_time = $.find("span[title]").attr('title')
+      // fix for pter 2FA
+      comment_time = $.find("span[title]:last").attr('title')
       userInfo = $.find("span[class='nowrap']")
       if (userInfo.text().match(/(無此帳戶|无此账户)/)) {
         status = 'banned'
@@ -117,15 +138,19 @@
       }
       seedingSizes.push(size)
     }
-    userAddInfos = jq.find("td[class='rowfollow']td[align='left']").toArray().map(_ => _.innerText)
+    userAddInfos = jq.find("td[class='rowfollow']td[align='left']td[style*='padding: 0px']").toArray()
+      .map(_ => _.innerText.replace(/([ptgmk]b)/ig, ' $1\n').replace(/(上传|做种积分)/ig, '\n$1').replace(/,/ig, ''))
     postBodys = jq.find("div[id*='pid']").toArray().map(_ => _.innerText)
     for (let i = 0; i < userInfos.length; i++) {
-      let {floor, uid, username, user_level, status, user_details_link, comment_time} = userInfos[i]
+      let { floor, uid, username, user_level, status, user_details_link, comment_time } = userInfos[i]
       let seedingSize = seedingSizes[i], userAddInfo = userAddInfos[i], upload, download, shareRate,
-       postBody = postBodys[i], preId, preEmail
+        postBody = postBodys[i], preId, preEmail
       rawComment.push([floor, uid, username, user_level, status, user_details_link, comment_time, seedingSize,
         userAddInfo, postBody].join(sep))
-      if (postBody.match(/引用/) || !postBody.match(/(注册(用户名|id)|(邮箱|email))/ig) || status !== '正常') {
+        // if (i === 1) {
+        //   debugger
+        // }
+      if (postBody.match(/引用/) || !postBody.match(preIdReg)|| !postBody.match(preEmailReg) || status !== '正常') {
         console.log(`skip -> ${status} -> ${postBody}`)
         continue
       }
@@ -135,27 +160,47 @@
       shareRate = userAddInfo.split(/\n+/).find(_ => _.match(/分/)).replace(/分享率[：:]/g, '').trim()
       upload = sizeToGBWithBreak(upload)
       download = sizeToGBWithBreak(download)
-      let regex = /注册(用户名|id)[：:]/ig
-      preId = postBody.split(/\n+/).find(_ => _.match(regex))
-      if (!preId) {
+      preId = postBody.split(/\n+/).find(_ => _.match(preIdReg))
+      if (!preId && preIdIsRequired) {
         console.log(`skip -> ${postBody}`)
         continue
       }
-      preId = preId.replace(regex, ' ').trim().split(/\s+/).pop()
-      regex = /(邮箱|email)[：:]/ig
-      preEmail = postBody.split(/\n+/).filter(_ => _.match(regex)).find(_ => _.match(/[a-z0-9]@[a-z0-9]+\./ig))
-        .replace(/(邮箱|email)[：:]/ig, ' ').trim().split(/\s+/).pop()
+      preId = preId || ''
+      preId = preId.replace(preIdReg, ' ').trim().split(/\s+/).pop()
+      preEmail = postBody.split(/\n+/).filter(_ => _.match(preEmailReg)).find(_ => _.match(preEmailFormat))
+        .replace(preEmailReg, ' ').trim().split(/\s+/).pop()
 
       filterComArr.push([floor, uid, username, user_level, status, seedingSize, comment_time,
         upload, download, shareRate, preId, preEmail, user_details_link].join(filterSep))
     }
   }
 
+  function getSeedingUrl(uid, page) {
+    let url, idSel, sizeSel
+    idSel = "table[width='100%'] tr td[class='rowfollow']:nth-child(2) a"
+    sizeSel = "table[width='100%'] tr td[class='rowfollow']:nth-child(3)"
+    switch (window.location.hostname) {
+      case "pterclub.com":
+        url = `/getusertorrentlist.php?do_ajax=1&userid=${uid}&type=seeding&page=${page}`
+        sizeSel = "table[width='100%'] tr td[class='rowfollow']:nth-child(4)"
+        break;
+      case "kp.m-team.cc":
+        url = `/getusertorrentlist.php?userid=${uid}&type=seeding&page=${i}`
+        break;
+      case "pt.2xfree.org":
+      default:
+        url = `/getusertorrentlistajax.php?userid=${uid}&type=seeding&page=${page}`
+        break;
+    }
+    return [url, idSel, sizeSel]
+  }
+  // let url = `/getusertorrentlistajax.php?do_ajax=1&userid=${uid}&type=seeding&page=${i}`
   // 获取用户做种大小
   async function seedingSize(uid, maxPage = 100000) {
+    let seedingCnt = 0
     let seedingIds = [], seedingArr = [], seedingSize = 0, err = false, errText = ''
     for (let i = 0; i < maxPage; i++) {
-      let url = `/getusertorrentlistajax.php?userid=${uid}&type=seeding&page=${i}`
+      let [url, idSel, sizeSel] = getSeedingUrl(uid, i)
       let rawHtml
       try {
         await jQuery.get(url).done(res => {
@@ -185,20 +230,21 @@
       // let prePageSize = 0, pageSize = 100
       if (totalSize.length === 0) {
         let torrIds, torrents
-        torrIds = jq.find("table[width='100%'] tr td[class='rowfollow']:nth-child(2) a")
-        torrents = jq.find("table[width='100%'] tr td[class='rowfollow']:nth-child(3)")
+        torrIds = jq.find(idSel)
+        torrents = jq.find(sizeSel)
         if (torrents.length === 0) {
           // if (torrents.length === 0 || torrents.length < prePageSize) {
           console.log(`maybe currPage: ${i} is the last`)
           break
         } else {
-          torrIds = torrIds.toArray().map(_ => _.href).map(_ => new URL(_).searchParams.get('id'))
+          torrIds = torrIds.toArray().map(_ => _.href)
+            .map(_ => new URL(_).searchParams.get('id')).filter(_ => !!_)
           torrents = torrents.toArray().map(_ => _.innerText)
           let diff = []
           for (let i = 0; i < torrIds.length; i++) {
             const id = torrIds[i];
             const torrent = torrents[i];
-            if (seedingIds.indexOf(id) > 0) {
+            if (seedingIds.indexOf(id) > -1) {
               console.log(`skip torrent id: ${id} ${torrent}`)
             } else {
               seedingIds.push(id)
@@ -210,19 +256,23 @@
             break
           } else {
             seedingArr = seedingArr.concat(diff)
+            seedingCnt += diff.length
           }
         }
       } else {
+        let seedingCnt = jq.find("div:contains('条记录'):first").text().split('|').shift().replace(/条记录[：:]/g, '').trim()
+        seedingCnt = parseInt(seedingCnt) || 0
         let [size, unit] = jq.find("div:contains('总大小'):first").text().split('|').pop().replace(/总大小[：:]/g, '').trim().split(/\s+/)
         totalSize = sizeToGB(size, unit)
         seedingSize = totalSize
+        console.log(`${uid} seedingCnt -> ${seedingCnt}`);
         return seedingSize
       }
       await sleep(reqBreak)
     }
-    seedingSize = seedingArr.map(_ => _.toLowerCase()).map(_ => _.split('\n'))
+    seedingSize = seedingArr.map(_ => sizeInfoFormat(_))
       .map(([size, unit]) => sizeToGB(size, unit)).reduce((a, b) => a + b, 0)
-    return seedingSize
+    return +seedingSize.toFixed(2)
   }
 
   async function main() {
@@ -256,11 +306,14 @@
       i += 1
     } while (!stopped && i <= finalPage)
 
-    // console.log(rawComment)
-    // console.log(rawComment.map(_ => _.join(',')).join('\n'))
-    // console.log(filterComArr.join('\n'))
-    createAndDownloadFile("raw.csv", rawComment.join('\n'))
-    createAndDownloadFile("filtered.csv", filterComArr.map(_ => _.split(sep).join(filterSep)).join('\n'))
+    if (isDebug) {
+      console.log(rawComment)
+      console.log(rawComment.join('\n'))
+      console.log(filterComArr.join('\n'))
+    } else {
+      createAndDownloadFile("raw.csv", rawComment.join('\n'))
+      createAndDownloadFile("filtered.csv", filterComArr.map(_ => _.split(sep).join(filterSep)).join('\n'))
+    }
   }
 
   const button = document.createElement("button");
@@ -277,5 +330,5 @@
     }
     button.disabled = false
   });
-
+  // await main()
 })();
