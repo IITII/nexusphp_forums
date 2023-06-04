@@ -66,4 +66,6 @@ const uidArrs = [
 ]
 ```
 
+* 如果卡片太小显示不下（换行），自己改改 height 和 width，具体位置看代码
+
 ![img](./docs/3.png)
