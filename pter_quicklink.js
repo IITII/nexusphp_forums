@@ -11,6 +11,7 @@
 // ==/UserScript==
 
 // @require file:///D:/services/nexusphp_forums/pter_quicklink.js
+this.$ = this.jQuery = jQuery.noConflict(true);
 (async function () {
     'use strict';
     // 下面每一排对应这里的颜色，你可以自己改改。支持颜色名称和16进制，如：#FF74D7
