@@ -10,7 +10,7 @@
 // @grant        none
 // @todo         做种条数, 本站 email, 用户被警告
 // ==/UserScript==
-
+ 
 // @require file:///D:/services/nexusphp_forums/nexusphp_comment.js
 (async function () {
   'use strict';
@@ -18,7 +18,7 @@
   // 求药信息是否需要包含ID
   const preIdIsRequired = true
   // 求药ID 正则
-  const preIdReg = /注册(用户名|id)[：:]/ig
+  const preIdReg = /(注册|用户名|id)[：:]/ig
   // 求药邮箱正则
   const preEmailReg = /(邮箱|email)[：:]/ig
   // 邮箱格式
@@ -82,11 +82,11 @@
     if (typeof fileContent !== 'string') {
       fileContent = JSON.stringify(fileContent);
     }
-
+ 
     // 创建隐藏a标签
     let aTag = document.createElement('a')
     // 将文件内容转成blob对象
-    let blob = new Blob([fileContent])
+    let blob = new Blob(["\ufeff" + fileContent], {type: 'text/csv,charset=UTF-8'})
     // 设置下载文件名
     aTag.download = fileName;
     // 给a标签创建DOMString
@@ -97,8 +97,8 @@
     URL.revokeObjectURL(blob)
     return ''
   }
-
-
+ 
+ 
   async function page(html = document) {
     let jq = jQuery(html)
     let userInfos, seedingSizes = [], userAddInfos, postBodys
@@ -109,7 +109,7 @@
       // fix for pter 2FA
       comment_time = $.find("span[title]:last").attr('title')
       userInfo = $.find("span[class='nowrap']")
-      if (userInfo.text().match(/(無此帳戶|无此账户)/)) {
+      if (userInfo.text().match(/(無此帳戶|无此帐户)/)) {
         status = 'banned'
         username = 'banned'
         user_level = 'Peasant_Name'
@@ -155,9 +155,9 @@
         continue
       }
       user_level = user_level.replace(/_Name/g, '')
-      upload = userAddInfo.split(/\n+/).find(_ => _.match(/上/)).replace(/上[傳传][：:]/g, '').trim()
-      download = userAddInfo.split(/\n+/).find(_ => _.match(/下/)).replace(/下[載载][：:]/g, '').trim()
-      shareRate = userAddInfo.split(/\n+/).find(_ => _.match(/分/)).replace(/分享率[：:]/g, '').trim()
+      upload = userAddInfo.split(/\n+/).find(_ => _.match(/上/))?.replace(/上[傳传][：:]/g, '')?.trim()
+      download = userAddInfo.split(/\n+/).find(_ => _.match(/下/))?.replace(/下[載载][：:]/g, '')?.trim()
+      shareRate = userAddInfo.split(/\n+/).find(_ => _.match(/分/))?.replace(/分享率[：:]/g, '')?.trim()
       upload = sizeToGBWithBreak(upload)
       download = sizeToGBWithBreak(download)
       preId = postBody.split(/\n+/).find(_ => _.match(preIdReg))
@@ -169,12 +169,12 @@
       preId = preId.replace(preIdReg, ' ').trim().split(/\s+/).pop()
       preEmail = postBody.split(/\n+/).filter(_ => _.match(preEmailReg)).find(_ => _.match(preEmailFormat))
         .replace(preEmailReg, ' ').trim().split(/\s+/).pop()
-
+ 
       filterComArr.push([floor, uid, username, user_level, status, seedingSize, comment_time,
         upload, download, shareRate, preId, preEmail, user_details_link].join(filterSep))
     }
   }
-
+ 
   function getSeedingUrl(uid, page) {
     let url, idSel, sizeSel
     idSel = "table[width='100%'] tr td[class='rowfollow']:nth-child(2) a"
@@ -184,7 +184,7 @@
         url = `/getusertorrentlist.php?do_ajax=1&userid=${uid}&type=seeding&page=${page}`
         sizeSel = "table[width='100%'] tr td[class='rowfollow']:nth-child(4)"
         break;
-      case "kp.m-team.cc":
+      case "xp.m-team.io":
         url = `/getusertorrentlist.php?userid=${uid}&type=seeding&page=${i}`
         break;
       case "pt.2xfree.org":
@@ -274,7 +274,7 @@
       .map(([size, unit]) => sizeToGB(size, unit)).reduce((a, b) => a + b, 0)
     return +seedingSize.toFixed(2)
   }
-
+ 
   async function main() {
     rawComment = []
     filterComArr = []
@@ -305,7 +305,7 @@
       await sleep(reqBreak)
       i += 1
     } while (!stopped && i <= finalPage)
-
+ 
     if (isDebug) {
       console.log(rawComment)
       console.log(rawComment.join('\n'))
@@ -315,7 +315,7 @@
       createAndDownloadFile("filtered.csv", filterComArr.map(_ => _.split(sep).join(filterSep)).join('\n'))
     }
   }
-
+ 
   const button = document.createElement("button");
   button.textContent = "收集评论";
   button.setAttribute("type", "button");
@@ -330,5 +330,4 @@
     }
     button.disabled = false
   });
-  // await main()
 })();
