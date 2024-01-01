@@ -10,7 +10,7 @@
 // @grant        none
 // @todo         做种条数, 本站 email, 用户被警告
 // ==/UserScript==
- 
+
 // @require file:///D:/services/nexusphp_forums/nexusphp_comment.js
 (async function () {
   'use strict';
@@ -18,7 +18,7 @@
   // 求药信息是否需要包含ID
   const preIdIsRequired = true
   // 求药ID 正则
-  const preIdReg = /(注册|用户名|id)[：:]/ig
+  const preIdReg = /注册(用户名|id)[：:]/ig
   // 求药邮箱正则
   const preEmailReg = /(邮箱|email)[：:]/ig
   // 邮箱格式
@@ -82,7 +82,7 @@
     if (typeof fileContent !== 'string') {
       fileContent = JSON.stringify(fileContent);
     }
- 
+
     // 创建隐藏a标签
     let aTag = document.createElement('a')
     // 将文件内容转成blob对象
@@ -97,8 +97,8 @@
     URL.revokeObjectURL(blob)
     return ''
   }
- 
- 
+
+
   async function page(html = document) {
     let jq = jQuery(html)
     let userInfos, seedingSizes = [], userAddInfos, postBodys
@@ -169,12 +169,12 @@
       preId = preId.replace(preIdReg, ' ').trim().split(/\s+/).pop()
       preEmail = postBody.split(/\n+/).filter(_ => _.match(preEmailReg)).find(_ => _.match(preEmailFormat))
         .replace(preEmailReg, ' ').trim().split(/\s+/).pop()
- 
+
       filterComArr.push([floor, uid, username, user_level, status, seedingSize, comment_time,
         upload, download, shareRate, preId, preEmail, user_details_link].join(filterSep))
     }
   }
- 
+
   function getSeedingUrl(uid, page) {
     let url, idSel, sizeSel
     idSel = "table[width='100%'] tr td[class='rowfollow']:nth-child(2) a"
@@ -274,7 +274,7 @@
       .map(([size, unit]) => sizeToGB(size, unit)).reduce((a, b) => a + b, 0)
     return +seedingSize.toFixed(2)
   }
- 
+
   async function main() {
     rawComment = []
     filterComArr = []
@@ -305,7 +305,7 @@
       await sleep(reqBreak)
       i += 1
     } while (!stopped && i <= finalPage)
- 
+
     if (isDebug) {
       console.log(rawComment)
       console.log(rawComment.join('\n'))
@@ -315,7 +315,7 @@
       createAndDownloadFile("filtered.csv", filterComArr.map(_ => _.split(sep).join(filterSep)).join('\n'))
     }
   }
- 
+
   const button = document.createElement("button");
   button.textContent = "收集评论";
   button.setAttribute("type", "button");
