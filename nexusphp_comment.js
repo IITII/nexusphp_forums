@@ -86,7 +86,7 @@
     // 创建隐藏a标签
     let aTag = document.createElement('a')
     // 将文件内容转成blob对象
-    let blob = new Blob([fileContent])
+    let blob = new Blob(["\ufeff" + fileContent], {type: 'text/csv,charset=UTF-8'})
     // 设置下载文件名
     aTag.download = fileName;
     // 给a标签创建DOMString
@@ -109,7 +109,7 @@
       // fix for pter 2FA
       comment_time = $.find("span[title]:last").attr('title')
       userInfo = $.find("span[class='nowrap']")
-      if (userInfo.text().match(/(無此帳戶|无此账户)/)) {
+      if (userInfo.text().match(/(無此帳戶|无此帐户)/)) {
         status = 'banned'
         username = 'banned'
         user_level = 'Peasant_Name'
@@ -155,9 +155,9 @@
         continue
       }
       user_level = user_level.replace(/_Name/g, '')
-      upload = userAddInfo.split(/\n+/).find(_ => _.match(/上/)).replace(/上[傳传][：:]/g, '').trim()
-      download = userAddInfo.split(/\n+/).find(_ => _.match(/下/)).replace(/下[載载][：:]/g, '').trim()
-      shareRate = userAddInfo.split(/\n+/).find(_ => _.match(/分/)).replace(/分享率[：:]/g, '').trim()
+      upload = userAddInfo.split(/\n+/).find(_ => _.match(/上/))?.replace(/上[傳传][：:]/g, '')?.trim()
+      download = userAddInfo.split(/\n+/).find(_ => _.match(/下/))?.replace(/下[載载][：:]/g, '')?.trim()
+      shareRate = userAddInfo.split(/\n+/).find(_ => _.match(/分/))?.replace(/分享率[：:]/g, '')?.trim()
       upload = sizeToGBWithBreak(upload)
       download = sizeToGBWithBreak(download)
       preId = postBody.split(/\n+/).find(_ => _.match(preIdReg))
@@ -184,7 +184,7 @@
         url = `/getusertorrentlist.php?do_ajax=1&userid=${uid}&type=seeding&page=${page}`
         sizeSel = "table[width='100%'] tr td[class='rowfollow']:nth-child(4)"
         break;
-      case "kp.m-team.cc":
+      case "xp.m-team.io":
         url = `/getusertorrentlist.php?userid=${uid}&type=seeding&page=${i}`
         break;
       case "pt.2xfree.org":
@@ -330,5 +330,4 @@
     }
     button.disabled = false
   });
-  // await main()
 })();
