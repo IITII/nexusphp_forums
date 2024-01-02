@@ -17,9 +17,9 @@ this.$ = this.jQuery = jQuery.noConflict(true);
     // 下面每一排对应这里的颜色，你可以自己改改。支持颜色名称和16进制，如：#FF74D7
     const colors = ['red', 'green', 'blue']
     const uidArrs = [
-        ['IITII,20405', 'IITII,20405'],
-        ['IITII,20405', 'IITII,20405', 'IITII,20405'],
-        ['IITII,20405', 'IITII,20405', 'IITII,20405'],
+        ['any,1', 'any,1'],
+        ['any,1', 'any,1', 'any,1'],
+        ['any,1', 'any,1', 'any,1'],
     ]
     // 如果卡片太小显示不下，自己改改这里的 height 和 width
     let card = $('<div><div>').css({ height: '30px', width: '120px', 'margin-right': '5px', position: 'fixed', display: 'block', top: '20em', })
