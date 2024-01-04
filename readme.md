@@ -58,9 +58,9 @@
 // 下面每一排对应这里的颜色，你可以自己改改。支持颜色名称和16进制，如：#FF74D7
 const colors = ['red', 'green', 'blue']
 const uidArrs = [
-    ['IITII,20405', 'IITII,20405'],
-    ['IITII,20405', 'IITII,20405', 'IITII,20405'],
-    ['IITII,20405', 'IITII,20405', 'IITII,20405'],
+    ['IITII,0', 'IITII,0'],
+    ['IITII,0', 'IITII,0', 'IITII,0'],
+    ['IITII,0', 'IITII,0', 'IITII,0'],
 ]
 ```
 
