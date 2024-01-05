@@ -117,9 +117,9 @@
         uid = -1
       } else {
         status = '正常'
-        username = userInfo.find("a[class*='_Name']").text()
-        user_level = userInfo.find("a[class*='_Name']").attr('class')
-        user_details_link = userInfo.find("a[class*='_Name']")[0].href
+        username = userInfo.find("a[href*='userdetail']").text()
+        user_level = userInfo.find("a[href*='userdetail']").attr('class')
+        user_details_link = userInfo.find("a[href*='userdetail']")[0].href
         uid = new URL(user_details_link).searchParams.get('id')
         uid = +uid
       }
@@ -138,7 +138,7 @@
       }
       seedingSizes.push(size)
     }
-    userAddInfos = jq.find("td[class='rowfollow']td[align='left']td[style*='padding: 0px']").toArray()
+    userAddInfos = jq.find("td[class='rowfollow']:has(>img[alt='avatar'])").toArray()
       .map(_ => _.innerText.replace(/([ptgmk]b)/ig, ' $1\n').replace(/(上传|做种积分)/ig, '\n$1').replace(/,/ig, ''))
     postBodys = jq.find("div[id*='pid']").toArray().map(_ => _.innerText)
     for (let i = 0; i < userInfos.length; i++) {
