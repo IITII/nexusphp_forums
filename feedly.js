@@ -2,7 +2,8 @@
 // @name         feedly 批量打开最近一天 feed
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  批量打开最近一天 feed, 方便阅读 pixiv
+// @description  批量打开最近一天 feed, 方便 pixiv
+// @description:en  批量打开最近一天 feed, 方便 pixiv
 // @author       IITII
 // @require      https://code.jquery.com/jquery-3.6.0.min.js
 // @match        https://feedly.com/*
@@ -41,7 +42,7 @@
             alert('没有找到文章链接');
             return;
         }
-        articleUrls.forEach(url => {
+        articleUrls.forEach((url, i) => {
             // 如果没有 Tampermonkey 扩展支持，可以使用 window.open(url, '_blank') 但会被浏览器拦截
             // 这里使用 GM_openInTab 来打开新标签页 GM_openInTab(url, { active: false, insert: true });
             // 这里使用 setTimeout 来延时打开新标签页
