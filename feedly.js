@@ -2,7 +2,7 @@
 // @name         feedly 批量打开最近一天 feed
 // @namespace    http://tampermonkey.net/
 // @version      0.1
-// @description  feedly 批量打开最近一天 feed, 方便阅读 pixiv
+// @description  批量打开最近一天 feed, 方便阅读 pixiv
 // @author       IITII
 // @require      https://code.jquery.com/jquery-3.6.0.min.js
 // @match        https://feedly.com/*
